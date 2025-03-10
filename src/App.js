@@ -16,12 +16,23 @@ function App() {
       </header>
       <main>
         <section>
-          <h2>Welcome to SportsPage</h2>
+          <h2>Welcome to my Capstone project</h2>
           <p>Your one-stop destination for all sports news and updates.</p>
         </section>
         <section>
           <h2>Latest News</h2>
           <p>Stay tuned for the latest sports news.</p>
+        </section>
+        <section>
+          <h2>Favorites</h2>
+          <div className="grid-container">
+            <div className="grid">
+              <div className="grid-item">Favorite 1</div>
+              <div className="grid-item">Favorite 2</div>
+              <div className="grid-item">Favorite 3</div>
+              <div className="grid-item">Favorite 4</div>
+            </div>
+          </div>
         </section>
       </main>
       <footer>

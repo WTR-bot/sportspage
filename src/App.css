@@ -53,6 +53,27 @@ main section {
   margin-bottom: 20px;
 }
 
+.grid-container {
+  display: flex;
+  justify-content: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 80%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.grid-item {
+  background-color: #f0f0f0;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
 footer {
   background-color: #282c34;
   color: white;
