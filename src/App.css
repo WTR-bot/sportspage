@@ -247,6 +247,14 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
+  padding: 20px; /* Add padding around the container */
+}
+
+.featured-news {
+  margin-bottom: 40px;
+  padding: 20px; /* Add padding inside the section */
+  background-color: #1a202c; /* Add a subtle background color */
+  border-radius: 10px; /* Add rounded corners */
 }
 
 .news-card {
@@ -255,11 +263,14 @@ main {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   padding: 20px;
   transition: transform 0.2s, box-shadow 0.2s;
+  max-width: 300px; /* Limits the card's width */
+  overflow: hidden; /* Ensures content doesn't overflow */
 }
 
 .news-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); /* Increase the shadow on hover */
+  background-color: #3b4758; /* Slightly lighten the background on hover */
 }
 
 .news-category {
@@ -274,20 +285,31 @@ main {
 
 .news-card h3 {
   margin: 0 0 15px 0;
-  font-size: 1.1rem;
-  line-height: 1.4;
-  color: #e2e8f0;
+  font-size: 1.2rem; /* Slightly increase the font size */
+  line-height: 1.5;
+  color: #f0f4f8; /* Make the text color brighter */
 }
 
 .read-more {
   color: #63b3ed;
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: 600; /* Make the text slightly bolder */
+  font-size: 1rem; /* Increase the font size */
 }
 
 .read-more:hover {
   text-decoration: underline;
+  color: #4299e1; /* Change the color on hover */
+}
+
+.news-image {
+  width: 100%;
+  max-height: 300px; /* Limits the height of the image */
+  object-fit: cover; /* Ensures the image is cropped proportionally */
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  display: block;
+  border: 2px solid #4a5568; /* Add a border around the image */
 }
 
 /* Footer */
@@ -349,7 +371,21 @@ footer {
     text-align: center;
     padding: 15px 20px;
   }
-  /* Page Headers */
+
+  .news-container {
+    grid-template-columns: 1fr; /* Stack news cards vertically */
+  }
+
+  .featured-image {
+    height: 200px; /* Reduce the height of images on smaller screens */
+  }
+
+  .search-input {
+    width: 100%; /* Make the search bar full-width */
+  }
+}
+
+/* Page Headers */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -507,18 +543,23 @@ footer {
 }
 
 .search-input {
-  padding: 8px 15px;
-  padding-left: 35px;
-  border-radius: 20px;
+  padding: 10px 15px; /* Increase padding for better usability */
+  border-radius: 25px; /* Make the input more rounded */
   border: 1px solid #4a5568;
-  background-color: #1a202c;
+  background-color: #2d3748;
   color: #e2e8f0;
-  font-size: 0.9rem;
-  width: 250px;
+  font-size: 1rem; /* Increase font size */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
 }
 
 .search-input::placeholder {
   color: #718096;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #63b3ed; /* Highlight the border on focus */
+  box-shadow: 0 0 8px rgba(99, 179, 237, 0.5); /* Add a glow effect */
 }
 
 .category-tabs {
@@ -549,8 +590,15 @@ footer {
   color: white;
 }
 
+.featured-news + .news-container {
+  margin-top: 40px; /* Add spacing between the featured section and the news grid */
+}
+
 .featured-news {
   margin-bottom: 40px;
+  padding: 20px; /* Add padding inside the section */
+  background-color: #1a202c; /* Add a subtle background color */
+  border-radius: 10px; /* Add rounded corners */
 }
 
 .featured-grid {
@@ -561,20 +609,36 @@ footer {
 
 .featured-card {
   display: flex;
+  flex-direction: column;
   background-color: #2d3748;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  height: 100%;
+  transition: transform 0.2s, box-shadow 0.2s; /* Add transition for hover effect */
+}
+
+.featured-card:hover {
+  transform: translateY(-5px); /* Slightly lift the card */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); /* Increase shadow on hover */
+  background-color: #3b4758; /* Slightly lighten the background on hover */
 }
 
 .featured-image {
-  width: 40%;
+  width: 100%;
+  max-height: 200px; /* Adjust the height of the image */
   object-fit: cover;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  display: block;
 }
 
 .featured-content {
   padding: 20px;
-  flex: 1;
+  flex: 1; /* Allow the content to take up remaining space */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Space out the content */
 }
 
 .news-date {
@@ -587,20 +651,30 @@ footer {
   color: #cbd5e0;
   margin-bottom: 15px;
   line-height: 1.5;
+  overflow: hidden; /* Prevent text overflow */
+  text-overflow: ellipsis; /* Add ellipsis for long text */
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limit to 3 lines */
+  -webkit-box-orient: vertical;
+}
+
+.read-more {
+  color: #63b3ed;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: auto; /* Push the link to the bottom */
+}
+
+.read-more:hover {
+  text-decoration: underline;
+  color: #4299e1;
 }
 
 .news-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-}
-
-.news-image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
 }
 
 .news-content {
@@ -681,5 +755,4 @@ footer {
     padding-bottom: 5px;
     flex-wrap: nowrap;
   }
-}
 }
