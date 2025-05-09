@@ -99,7 +99,15 @@ function NewsPage() {
           <div className="featured-grid">
             {featuredArticles.map(article => (
               <div key={article.id} className="featured-card">
-                <img src={article.image} alt={article.headline} className="featured-image" />
+                <img 
+                  src={article.image} 
+                  alt={article.headline} 
+                  className="featured-image"
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = "/api/placeholder/400/200";
+                  }}
+                />
                 <div className="featured-content">
                   <span className="news-category">{article.category}</span>
                   <h3>{article.headline}</h3>
