@@ -474,7 +474,7 @@ function MyTeamsPage() {
                 </div>
                 <button
                   className="remove-btn"
-                  onClick={() => handleRemoveTeam(team.id)}
+                  onClick={() => handleRemoveTeam(team.id, team.league)}
                   aria-label="Remove team"
                 >
                   ×
