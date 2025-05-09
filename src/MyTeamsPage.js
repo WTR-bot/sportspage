@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 function MyTeamsPage() {
-  const [favoriteTeams, setFavoriteTeams] = useState([
-    { id: 1, name: "Lakers", league: "NBA", score: "0-0", opponent: "Warriors", status: "Upcoming", logo: "/api/placeholder/60/60" },
-    { id: 2, name: "Celtics", league: "NBA", score: "0-0", opponent: "Heat", status: "Upcoming", logo: "/api/placeholder/60/60" },
-  ]);
+  const [favoriteTeams, setFavoriteTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -19,19 +16,43 @@ function MyTeamsPage() {
 
   // Available leagues with their API paths
   const availableLeagues = [
-    { id: 'NBA', name: 'NBA Basketball', apiPath: 'basketball/nba' },
-    { id: 'WNBA', name: 'WNBA Basketball', apiPath: 'basketball/wnba' },
-    { id: 'MLB', name: 'MLB Baseball', apiPath: 'baseball/mlb' },
-    { id: 'NFL', name: 'NFL Football', apiPath: 'football/nfl' },
-    { id: 'NHL', name: 'NHL Hockey', apiPath: 'hockey/nhl' },
+    { id: 'NBA', name: 'NBA', apiPath: 'basketball/nba' },
+    { id: 'WNBA', name: 'WNBA', apiPath: 'basketball/wnba' },
+    { id: 'MLB', name: 'MLB', apiPath: 'baseball/mlb' },
+    { id: 'NFL', name: 'NFL', apiPath: 'football/nfl' },
+    { id: 'NHL', name: 'NHL', apiPath: 'hockey/nhl' },
     { id: 'EPL', name: 'Premier League Soccer', apiPath: 'soccer/eng.1' }
   ];
+
+  // Load favorite teams from localStorage on initial render
+  useEffect(() => {
+    const savedTeams = localStorage.getItem('favoriteTeams');
+    
+    if (savedTeams) {
+      try {
+        const parsedTeams = JSON.parse(savedTeams);
+        setFavoriteTeams(parsedTeams);
+      } catch (e) {
+        console.error("Error parsing saved teams:", e);
+        // Fallback to default teams
+        setFavoriteTeams([]);
+      }
+    }
+    
+    setLoading(false);
+  }, []);
+
+  // Save teams to localStorage whenever they change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('favoriteTeams', JSON.stringify(favoriteTeams));
+    }
+  }, [favoriteTeams, loading]);
 
   // Fetch scores for favorite teams
   useEffect(() => {
     const fetchScores = async () => {
-      if (favoriteTeams.length === 0) {
-        setLoading(false);
+      if (favoriteTeams.length === 0 || loading) {
         return;
       }
 
@@ -47,58 +68,104 @@ function MyTeamsPage() {
           const leagueData = availableLeagues.find(l => l.id === league);
           if (!leagueData) return teams; // Return unchanged if league not found
 
-          const apiPath = leagueData.apiPath;
-          const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${apiPath}/scoreboard`);
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch scores for ${league}`);
-          }
-          
-          const data = await response.json();
-          
-          // Update each team with its current game data
-          return teams.map(team => {
-            const game = data.events.find(event =>
-              event.competitions[0].competitors.some(competitor => 
-                competitor.team.shortDisplayName === team.name || 
-                competitor.team.name === team.name)
-            );
-
-            if (game) {
-              const teamData = game.competitions[0].competitors.find(
-                competitor => competitor.team.shortDisplayName === team.name || competitor.team.name === team.name
-              );
-              
-              const opponentData = game.competitions[0].competitors.find(
-                competitor => competitor.team.shortDisplayName !== team.name && competitor.team.name !== team.name
+          try {
+            const apiPath = leagueData.apiPath;
+            const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${apiPath}/scoreboard`);
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch scores for ${league}`);
+            }
+            
+            const data = await response.json();
+            
+            // Update each team with its current game data
+            return teams.map(team => {
+              const game = data.events?.find(event =>
+                event.competitions[0].competitors.some(competitor => 
+                  competitor.team.shortDisplayName === team.name || 
+                  competitor.team.name === team.name ||
+                  (competitor.team.id && competitor.team.id === team.id.toString()))
               );
 
+              if (game) {
+                const teamData = game.competitions[0].competitors.find(
+                  competitor => competitor.team.shortDisplayName === team.name || 
+                    competitor.team.name === team.name ||
+                    (competitor.team.id && competitor.team.id === team.id.toString())
+                );
+                
+                const opponentData = game.competitions[0].competitors.find(
+                  competitor => competitor.team.shortDisplayName !== team.name && 
+                    competitor.team.name !== team.name &&
+                    (!competitor.team.id || competitor.team.id !== team.id.toString())
+                );
+
+                return {
+                  ...team,
+                  score: `${teamData?.score || 0}-${opponentData?.score || 0}`,
+                  opponent: opponentData?.team.shortDisplayName || opponentData?.team.name || team.opponent,
+                  status: game.status.type.shortDetail || "Unknown",
+                  logo: teamData?.team.logo || team.logo,
+                };
+              }
+
+              // No game found, check for upcoming games
+              if (data.events?.length > 0) {
+                // Look for upcoming games where this team is scheduled
+                const upcomingGame = data.events.find(event => 
+                  !event.competitions[0].status.type.completed &&
+                  event.competitions[0].competitors.some(competitor => 
+                    competitor.team.shortDisplayName === team.name || 
+                    competitor.team.name === team.name ||
+                    (competitor.team.id && competitor.team.id === team.id.toString()))
+                );
+
+                if (upcomingGame) {
+                  const opponentData = upcomingGame.competitions[0].competitors.find(
+                    competitor => competitor.team.shortDisplayName !== team.name && 
+                      competitor.team.name !== team.name &&
+                      (!competitor.team.id || competitor.team.id !== team.id.toString())
+                  );
+
+                  // Get game date/time if available
+                  const gameDate = upcomingGame.date 
+                    ? new Date(upcomingGame.date).toLocaleDateString() 
+                    : '';
+                  const gameTime = upcomingGame.competitions[0].status?.type?.shortDetail || '';
+                  
+                  return {
+                    ...team,
+                    score: `0-0`,
+                    opponent: opponentData?.team.shortDisplayName || opponentData?.team.name || "TBD",
+                    status: gameTime ? `${gameDate} - ${gameTime}` : "Upcoming",
+                  };
+                }
+              }
+
+              // No game found at all
               return {
                 ...team,
-                score: `${teamData.score || 0} - ${opponentData.score || 0}`,
-                opponent: opponentData.team.shortDisplayName || opponentData.team.name,
-                status: game.status.type.shortDetail,
-                logo: teamData.team.logo || team.logo,
+                score: "0-0",
+                status: "No games scheduled",
               };
-            }
-
-            return team;
-          });
+            });
+          } catch (error) {
+            console.error(`Error fetching data for ${league}:`, error);
+            return teams; // On error, return teams unchanged
+          }
         });
 
         const updatedTeamsByLeague = await Promise.all(leaguePromises);
         const updatedTeams = updatedTeamsByLeague.flat();
         
         setFavoriteTeams(updatedTeams);
-        setLoading(false);
       } catch (err) {
         setError(err.message);
-        setLoading(false);
       }
     };
 
     fetchScores();
-  }, []);
+  }, [loading, favoriteTeams.length]);
 
   // Fetch teams for the selected league
   useEffect(() => {
@@ -178,11 +245,15 @@ function MyTeamsPage() {
         league: selectedLeague,
         score: "0-0",
         opponent: "TBD",
-        status: "No games scheduled",
+        status: "Loading scores...",
         logo: team.logo
       };
       
-      setFavoriteTeams([...favoriteTeams, newTeam]);
+      const updatedTeams = [...favoriteTeams, newTeam];
+      setFavoriteTeams(updatedTeams);
+      
+      // Store in localStorage immediately
+      localStorage.setItem('favoriteTeams', JSON.stringify(updatedTeams));
       
       // Immediately fetch scores for the new team
       const leagueData = availableLeagues.find(l => l.id === selectedLeague);
@@ -190,30 +261,71 @@ function MyTeamsPage() {
         fetch(`https://site.api.espn.com/apis/site/v2/sports/${leagueData.apiPath}/scoreboard`)
           .then(res => res.json())
           .then(data => {
-            const game = data.events.find(event =>
+            const game = data.events?.find(event =>
               event.competitions[0].competitors.some(competitor => 
-                competitor.team.id === team.id)
+                competitor.team.id === team.id.toString())
             );
             
             if (game) {
               const teamData = game.competitions[0].competitors.find(
-                competitor => competitor.team.id === team.id
+                competitor => competitor.team.id === team.id.toString()
               );
               
               const opponentData = game.competitions[0].competitors.find(
-                competitor => competitor.team.id !== team.id
+                competitor => competitor.team.id !== team.id.toString()
               );
               
               const updatedTeam = {
                 ...newTeam,
-                score: `${teamData.score || 0} - ${opponentData.score || 0}`,
-                opponent: opponentData.team.shortDisplayName,
-                status: game.status.type.shortDetail,
+                score: `${teamData?.score || 0}-${opponentData?.score || 0}`,
+                opponent: opponentData?.team.shortDisplayName || "TBD",
+                status: game.status.type.shortDetail || "Unknown",
               };
               
-              setFavoriteTeams(prevTeams => 
-                prevTeams.map(t => t.id === team.id && t.league === selectedLeague ? updatedTeam : t)
+              const newTeams = favoriteTeams.map(t => 
+                t.id === team.id && t.league === selectedLeague ? updatedTeam : t
               );
+              
+              setFavoriteTeams([...newTeams, updatedTeam]);
+              localStorage.setItem('favoriteTeams', JSON.stringify([...newTeams, updatedTeam]));
+            } else {
+              // Check for upcoming games
+              const upcomingGame = data.events?.find(event => 
+                !event.competitions[0].status.type.completed &&
+                event.competitions[0].competitors.some(competitor => 
+                  competitor.team.id === team.id.toString())
+              );
+
+              if (upcomingGame) {
+                const opponentData = upcomingGame.competitions[0].competitors.find(
+                  competitor => competitor.team.id !== team.id.toString()
+                );
+
+                const gameDate = upcomingGame.date 
+                  ? new Date(upcomingGame.date).toLocaleDateString() 
+                  : '';
+                const gameTime = upcomingGame.competitions[0].status?.type?.shortDetail || '';
+                
+                const updatedTeam = {
+                  ...newTeam,
+                  opponent: opponentData?.team.shortDisplayName || "TBD",
+                  status: gameTime ? `${gameDate} - ${gameTime}` : "Upcoming",
+                };
+
+                setFavoriteTeams(prevTeams => 
+                  prevTeams.map(t => t.id === team.id && t.league === selectedLeague ? updatedTeam : t)
+                );
+              } else {
+                // No games found
+                const updatedTeam = {
+                  ...newTeam,
+                  status: "No games scheduled",
+                };
+
+                setFavoriteTeams(prevTeams => 
+                  prevTeams.map(t => t.id === team.id && t.league === selectedLeague ? updatedTeam : t)
+                );
+              }
             }
           })
           .catch(err => console.error("Error fetching new team's scores:", err));
@@ -226,12 +338,18 @@ function MyTeamsPage() {
     setSearchResults([]);
   };
 
-  const handleRemoveTeam = (id) => {
-    setFavoriteTeams(favoriteTeams.filter(team => team.id !== id));
+  const handleRemoveTeam = (id, league) => {
+    const updatedTeams = favoriteTeams.filter(
+      team => !(team.id === id && team.league === league)
+    );
+    setFavoriteTeams(updatedTeams);
+    
+    // Update localStorage
+    localStorage.setItem('favoriteTeams', JSON.stringify(updatedTeams));
   };
 
-  if (loading && favoriteTeams.length > 0) {
-    return <div>Loading scores...</div>;
+  if (loading) {
+    return <div className="loading-indicator">Loading your teams...</div>;
   }
 
   return (
@@ -279,6 +397,11 @@ function MyTeamsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="form-control"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchTerm.length >= 2) {
+                    handleSearch();
+                  }
+                }}
               />
               <button 
                 onClick={handleSearch}
@@ -313,8 +436,13 @@ function MyTeamsPage() {
                     <button 
                       onClick={() => handleAddTeam(team)}
                       className="add-btn"
+                      disabled={favoriteTeams.some(
+                        t => t.id === team.id && t.league === selectedLeague
+                      )}
                     >
-                      Add
+                      {favoriteTeams.some(t => t.id === team.id && t.league === selectedLeague) 
+                        ? 'Added' 
+                        : 'Add'}
                     </button>
                   </div>
                 ))}
