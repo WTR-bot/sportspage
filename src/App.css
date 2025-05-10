@@ -633,11 +633,12 @@ footer {
   background-color: #3b4758; /* Slightly lighten the background on hover */
 }
 
+/* Adjust featured images to improve framing */
 .featured-image {
+  object-fit: cover; /* Ensure the image fills the box proportionally */
+  object-position: top; /* Focus on the top of the image to avoid cutting off important parts */
   width: 100%;
-  height: 250px;
-  object-fit: cover;
-  object-position: center;
+  height: 250px; /* Maintain consistent height */
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   transition: transform 0.5s ease;
@@ -678,15 +679,14 @@ footer {
   margin: 5px 0 10px;
 }
 
+/* Fix compatibility issue with line-clamp */
 .news-excerpt {
-  color: #cbd5e0;
-  margin-bottom: 15px;
-  line-height: 1.5;
-  overflow: hidden; /* Prevent text overflow */
-  text-overflow: ellipsis; /* Add ellipsis for long text */
   display: -webkit-box;
   -webkit-line-clamp: 3; /* Limit to 3 lines */
+  line-clamp: 3; /* Standard property for compatibility */
   -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .read-more {
